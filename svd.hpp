@@ -20,7 +20,7 @@ class SVD {
     double eta, reg, eps, max_epochs;
 
     sp_mat Y; // NUM_USERS x NUM_MOVIES
-    vector<NUM_USERS_SMALL, NUM_MOVIES> Y 
+    // vector<NUM_USERS_SMALL, NUM_MOVIES> Y; 
     vector<T> points;
 
     MatrixXd U; // NUM_USERS X K
