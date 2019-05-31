@@ -68,6 +68,7 @@ void SVD::load_data() {
     int count = 0;
     int uid, mid, date, rating;
     while (file >> uid >> mid >> date >> rating) {
+        cout << count << " hi" << "\n";
         points.push_back(T(uid-1, mid-1, rating));
         count++;
     }
