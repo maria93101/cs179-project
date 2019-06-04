@@ -16,7 +16,7 @@
 #include <chrono>
 #include <omp.h>
 
-#include "svd.hpp"
+#include "svd_GPU.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -40,6 +40,34 @@ void SVD::set_values (int k, double et, double r, double ep,
     max_epochs = max_ep;
 
     cout << "done setting values\n";
+}
+
+
+void SVD::initialize () {
+
+    // Initialize cublas handle
+    cublasHandle_t handle;
+
+    // Allocate device memory for the matrices
+    CUDA_CALL(cudaMalloc((void **) &u_mat, 
+                    NUM_USERS_SMALL * K * sizeof(double)));
+
+    CUDA_CALL(cudaMalloc((void **) &v_mat, 
+                    NUM_MOVIES * K * sizeof(double)));    
+
+    // Copy over the data onto the device
+    // TODO: U is probs supposed to be in that strange flat format
+    CUBLAS_CALL(cublasSetMatrix(NUM_USERS_SMALL, K, sizeof(float), 
+                        U, NUM_USERS_SMALL, u_mat, NUM_USERS_SMALL));
+    
+    CUBLAS_CALL(cublasSetMatrix(NUM_USERS_SMALL, K, sizeof(float), 
+                        U, NUM_USERS_SMALL, u_mat, NUM_USERS_SMALL));    
+
+    float one = 1;
+    float zero = 0;
+
+
+    cout << "done initialize GPU stuff \n";
 }
 
 void SVD::load_data() {
