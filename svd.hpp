@@ -9,6 +9,15 @@
 using namespace std;
 using namespace Eigen;
 
+const int NUM_USERS = 458293;
+
+const int NUM_USERS_TINY = 13;
+const int NUM_MOVIES_TINY = 3;
+
+const int NUM_USERS_SMALL = 10000;
+const int NUM_MOVIES = 17770;
+
+
 // declares a row-major sparse matrix type of double
 typedef SparseMatrix<double, RowMajor> sp_mat; 
 
@@ -19,12 +28,13 @@ class SVD {
     int M, N, K;
     double eta, reg, eps, max_epochs;
 
-    sp_mat Y; // NUM_USERS x NUM_MOVIES
-    // vector<NUM_USERS_SMALL, NUM_MOVIES> Y; 
-    vector<T> points;
+    vector<vector<double>> Y; // NUM_USERS x NUM_MOVIES
+    
+    // this should work but it isn't
+    // vector<vector<double>> Y(NUM_USERS_SMALL, vector<double>(NUM_MOVIES));
 
-    MatrixXd U; // NUM_USERS X K
-    MatrixXd V; // NUM_MOVIES X K
+    vector<vector<double>> U; // NUM_USERS X K
+    vector<vector<double>> V; // NUM_MOVIES X K
 
     vector<int> val_uid;
     vector<int> val_mid;
@@ -41,9 +51,9 @@ class SVD {
 
     double get_err();
 
-    VectorXd grad_U(VectorXd, VectorXd, int);
+    vector<double> grad_U(vector<double>, vector<double>, int);
 
-    VectorXd grad_V(VectorXd, VectorXd, int);
+    vector<double> grad_V(vector<double>, vector<double>, int);
 
     void train_model();
 

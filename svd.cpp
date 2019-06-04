@@ -22,14 +22,6 @@ using namespace std;
 using namespace Eigen;
 using namespace std::chrono;
 
-const int NUM_USERS = 458293;
-const int NUM_MOVIES = 17770;
-
-const int NUM_USERS_TINY = 13;
-const int NUM_MOVIES_TINY = 3;
-
-const int NUM_USERS_SMALL = 10000;
-
 // generator:
 struct c_unique {
   int current;
@@ -51,53 +43,44 @@ void SVD::set_values (int k, double et, double r, double ep,
 }
 
 void SVD::load_data() {
-    // TRAINING ON BASE (96% OF ALL TRAINING DATA)
 
     cout << "load training data \n";
 
-    // TODO: resize
-    // allocate space for matrix of values
-    // Y.resize(NUM_USERS_TINY, NUM_MOVIES_TINY);
-    Y.resize(NUM_USERS_SMALL, NUM_MOVIES);
-
-    // TODO: load correct data
-    //ifstream file("../data/Archive/tiny.txt"); // actually base.txt
     ifstream file("Archive/small_train.txt");
 
+    // stupid way of initializing for now
+    for (int i = 0; i < NUM_USERS_SMALL; ++i)
+    {
+        vector<double> temp(NUM_MOVIES, 0);
+        Y.push_back(temp);
+    }
+
     cout << "made it here \n";
-    int count = 0;
     int uid, mid, date, rating;
     while (file >> uid >> mid >> date >> rating) {
-        cout << count << " hi" << "\n";
-        points.push_back(T(uid-1, mid-1, rating));
-        count++;
+        Y[uid-1][mid-1] = rating;
+        // cout << Y[uid-1][mid-1] << "\n";
     }
 
     cout << "made it here 2\n";
-
-    // convert vector to matrix
-    Y.setFromTriplets(points.begin(), points.end());
-
-    // print results
-    // cout << MatrixXd(Y) << "\n";
 }
 
-void SVD::load_valid() {
-    //  CROSS VALIDATING ON VALID AND HIDDEN (4% OF ALL TRAINING DATA)
+// void SVD::load_valid() {
+//     //  CROSS VALIDATING ON VALID AND HIDDEN (4% OF ALL TRAINING DATA)
 
-    cout << "load validation data\n";
+//     cout << "load validation data\n";
 
-    // TODO: load correct data
-    //ifstream file("../data/Archive/tiny_qual.txt"); // actually qual.txt
-    ifstream file("Archive/small_probe.txt");
+//     // TODO: load correct data
+//     //ifstream file("../data/Archive/tiny_qual.txt"); // actually qual.txt
+//     ifstream file("Archive/small_probe.txt");
 
-    int uid, mid, date, rating;
-    while (file >> uid >> mid >> date >> rating) {
-        val_uid.push_back(uid-1);
-        val_mid.push_back(mid-1);
-        val_ratings.push_back(rating);
-    }
-}
+//     int uid, mid, date, rating;
+//     while (file >> uid >> mid >> date >> rating) {
+//         val_uid.push_back(uid-1);
+//         val_mid.push_back(mid-1);
+//         val_ratings.push_back(rating);
+//     }
+// }
 
 double SVD::get_err() {
     auto start = high_resolution_clock::now();
@@ -106,18 +89,23 @@ double SVD::get_err() {
 
     double squared_err = 0.0;
 
-    for (int k=0; k<Y.outerSize(); ++k) {
-        for (sp_mat::InnerIterator it(Y, k); it; ++it) {
-            int Y_ij = it.value();
-            int i = it.row();   // row index
-            int j = it.col();   // col index (here it is equal to k)
-            // it.index(); // inner index, here it is equal to it.row()
+    for (auto row = Y.begin(); row != Y.end(); ++row) {
+        
+        for (auto col = row->begin(); col != row->end(); ++col) {
+            int Y_ij = (int) *col; // actual rating value
+            int i = distance(Y.begin(), row); // row index
+            int j = distance(row->begin(), col); // col index
 
-            squared_err += 0.5 * pow((Y_ij - U.row(i).dot(V.row(j))), 2);
+            cout << "got index\n";
+           
+            vector<double> urow = U[i];
+            vector<double> vrow = V[i];
+
+            // TODO: squared_err += 0.5 * pow((Y_ij - urow.dot(vrow)), 2);
         }
     }
 
-    squared_err = squared_err / Y.outerSize();
+    squared_err = squared_err / Y.size();
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
@@ -126,22 +114,32 @@ double SVD::get_err() {
     return squared_err;
 }
 
-VectorXd SVD::grad_U(VectorXd U_i, VectorXd V_j, int Y_ij) {
-    //cout << "begin grad U\n";
-    double prod = U_i.adjoint() * V_j;
-    double Y_ij_d = (double) Y_ij;
-    VectorXd sq_err = V_j * (Y_ij_d - prod);
-    VectorXd gradient = (U_i * reg - sq_err) * eta;
+vector<double> SVD::grad_U(vector<double> U_i, vector<double> V_j, int Y_ij) {
+    cout << "begin grad U\n";
+
+    vector<double> gradient;
+
+    // TODO: Replace with CuBLAS stuff
+
+    // double prod = U_i.adjoint() * V_j;
+    // double Y_ij_d = (double) Y_ij;
+    // VectorXd sq_err = V_j * (Y_ij_d - prod);
+    // VectorXd gradient = (U_i * reg - sq_err) * eta;
 
     return gradient;
 }
 
-VectorXd SVD::grad_V(VectorXd U_i, VectorXd V_j, int Y_ij) {
-    //cout << "begin grad V\n";
-    double prod = U_i.adjoint() * V_j;
-    double Y_ij_d = (double) Y_ij;
-    VectorXd sq_err = U_i * (Y_ij_d - prod);
-    VectorXd gradient = (V_j * reg - sq_err) * eta;
+vector<double> SVD::grad_V(vector<double> U_i, vector<double> V_j, int Y_ij) {
+    cout << "begin grad V\n";
+
+    vector<double> gradient;
+
+    // TODO: Replace with CuBLAS stuff
+
+    // double prod = U_i.adjoint() * V_j;
+    // double Y_ij_d = (double) Y_ij;
+    // VectorXd sq_err = U_i * (Y_ij_d - prod);
+    // VectorXd gradient = (V_j * reg - sq_err) * eta;
 
     return gradient;
 }
@@ -152,21 +150,46 @@ void SVD::train_model() {
 
     cout << "begin training\n";
 
-    // initialize the entries of U and V to be small random numbers
-    U = MatrixXd::Random(M, K);
-    V = MatrixXd::Random(N, K);
+    // fill feature matrices with random 0-0.5 values
 
+    // double lower_bound = -0.5;
+    // double upper_bound = 0.5;
+    // uniform_real_distribution<double> unif(lower_bound, upper_bound);
+    // default_random_engine re;
+
+    // generate(U.begin(), U.end(), unif(re));
+    // generate(V.begin(), V.end(), unif(re));
+
+    // for now, just 0
+    // TODO: this is really stupid
+    for (int i = 0; i < NUM_USERS_SMALL; ++i)
+    {
+        vector<double> temp;
+        for (int j = 0; i < K; ++j)
+        {
+            temp.push_back(0.0);
+        }
+        U.push_back(temp);
+    }
+
+    for (int i = 0; i < NUM_MOVIES; ++i)
+    {
+        vector<double> temp;
+        for (int j = 0; i < K; ++j)
+        {
+            temp.push_back(0.0);
+        }
+        V.push_back(temp);
+    }
+
+    // get initial error
     double err0 = get_err();
     double err = err0;
     double err1 = 0.0;
 
-    // TODO: resize
-    //vector<int> indices(NUM_USERS_TINY);
-    //indices.reserve(NUM_USERS_TINY);
     vector<int> indices(NUM_USERS_SMALL);
     indices.reserve(NUM_USERS_SMALL);
 
-    // iota (indices.begin(), indices.end(), 0); // < it dont werk
     generate (indices.begin(), indices.end(), UniqueNumber);
 
     // continue for max_epochs
@@ -178,34 +201,41 @@ void SVD::train_model() {
         // shuffle the points in the indices vector
         random_shuffle(indices.begin(), indices.end());
 
-        sp_mat Y_perm = Y;
+        vector<vector<double>> Y_perm = Y;
         cout << "completed permutation\n";
+
 
         // update U and V
         for (vector<int>::iterator it=indices.begin(); it!=indices.end(); ++it) {
             int k = *it;
 
-            for (sp_mat::InnerIterator it(Y_perm, k); it; ++it) {
-                int Y_ij = it.value();
-                int i = it.row();   // row index
-                int j = it.col();   // col index (here it is equal to k)
-                // it.index(); // inner index, here it is equal to it.row()
+            // potential problem: no easy way to only iterate through the 
+            // non zero values like there was for eigen so it might be slower
 
-                // update U
-                VectorXd gradu = grad_U(U.row(i), V.row(j), Y_ij);
-                VectorXd urow = U.row(i);
-                U.row(i) = urow - gradu;
+            for (auto row = Y.begin(); row != Y.end(); ++row)
+            {
+                for (auto col = row->begin(); col != row->end(); ++col) {
+                    int Y_ij = (int) *col; // actual rating value
+                    int i = distance(Y.begin(), row); // row index
+                    int j = distance(row->begin(), col); // col index
 
-                //cout << "completed grad U\n";
+                    // Update U
+                    vector<double> gradu = grad_U(U[i], V[j], Y_ij);
+                    vector<double> urow = U[i];
+                    // TODO: U[i] = urow - gradu (CuBLAS stuffz)
+                    // (use set difference?) 
+                    // https://stackoverflow.com/questions/283977/c-stl-set-difference
 
-                // update V
-                VectorXd gradv = grad_V(U.row(i), V.row(j), Y_ij);
-                VectorXd vrow = V.row(j);
-                V.row(j) = vrow - gradv;
+                    cout << "completed grad U\n";
 
-                //cout << "completed grad V\n";
-            }
-        }
+                    // Update V
+                    vector<double> gradv = grad_V(U[i], V[j], Y_ij);
+                    vector<double> vrow = V[i];
+                    // TODO: V[i] = vrow - gradv
+
+                    cout << "completed grad V\n";
+                }
+            }            
 
         cout << "updated U, V for all points in training set\n";
 
@@ -233,38 +263,39 @@ void SVD::train_model() {
     double e_in = err;
 
     cout << "completed training, e_in = " << e_in << "\n";
+    }
 }
 
 void SVD::predict_valid() {
-    cout << "predict probe\n";
+    // cout << "predict probe\n";
 
-    double squared_err = 0.0;
+    // double squared_err = 0.0;
 
-    for (int i=0; i<val_uid.size(); ++i) {
-        int uid = val_uid.at(i);
-        int mid = val_mid.at(i);
-        double rating = (double) val_ratings.at(i);
+    // for (int i=0; i<val_uid.size(); ++i) {
+    //     int uid = val_uid.at(i);
+    //     int mid = val_mid.at(i);
+    //     double rating = (double) val_ratings.at(i);
 
-        VectorXd urow = U.row(uid);
-        VectorXd vrow = V.row(mid);
+    //     VectorXd urow = U.row(uid);
+    //     VectorXd vrow = V.row(mid);
 
-        double prediction = urow.adjoint() * vrow;
+    //     double prediction = urow.adjoint() * vrow;
 
-        val_predictions.push_back(rating);
+    //     val_predictions.push_back(rating);
 
-        squared_err += 0.5 * pow((rating - prediction), 2);
-    }
+    //     squared_err += 0.5 * pow((rating - prediction), 2);
+    // }
 
-    squared_err = squared_err / val_uid.size();
+    // squared_err = squared_err / val_uid.size();
 
-    cout << "completed predictions for probe set, e_out = " << squared_err << "\n";
+    // cout << "completed predictions for probe set, e_out = " << squared_err << "\n";
 
-    // TODO: correct file
-    // yeet it out to a file
-    //ofstream of("../results/tiny_svd.txt");
-    ofstream of("svd_val_results.txt");
-    ostream_iterator<double> output_iterator(of, "\n");
-    copy(val_predictions.begin(), val_predictions.end(), output_iterator);
+    // // TODO: correct file
+    // // yeet it out to a file
+    // //ofstream of("../results/tiny_svd.txt");
+    // ofstream of("svd_val_results.txt");
+    // ostream_iterator<double> output_iterator(of, "\n");
+    // copy(val_predictions.begin(), val_predictions.end(), output_iterator);
 }
 
 int main () {
@@ -286,13 +317,13 @@ int main () {
     duration = duration_cast<microseconds>(stop-start);
     cout << "training model took: " << duration.count() << endl;
 
-    svd.load_valid();
+    // svd.load_valid();
 
-    start = high_resolution_clock::now();
-    svd.predict_valid();
-    stop = high_resolution_clock::now();
-    duration = duration_cast<microseconds>(stop-start);
-    cout << "predicting valid took: " << duration.count() << endl;
+    // start = high_resolution_clock::now();
+    // svd.predict_valid();
+    // stop = high_resolution_clock::now();
+    // duration = duration_cast<microseconds>(stop-start);
+    // cout << "predicting valid took: " << duration.count() << endl;
 
     return 0;
 }
