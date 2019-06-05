@@ -17,89 +17,6 @@
 using namespace std;
 using namespace std::chrono;
 // It takes about 5 minutes to run..
-vector<float> get_paired_user_ratings(vector<float> movie_i,
-                                      vector<float> movie_j, bool first)
-{
-    sort(movie_i.begin(), movie_i.end());
-    sort(movie_j.begin(), movie_j.end());
-    int counter_i = 0;
-    int counter_j = 0;
-    vector<float> res;
-    while(counter_i < movie_i.size()/3 and counter_j < movie_j.size()/3)
-    {
-        //
-        if ((movie_i[counter_i*3]) == (movie_j[counter_j*3]))
-        {
-            if ((movie_j[counter_j*3 + 1])!= 0 and 0 != (movie_i[1+3*counter_i]))
-            {
-                if (first)
-                {
-                    res.push_back(movie_i[1+3*counter_i]);
-                }
-                else{
-                    res.push_back(movie_j[1+3*counter_j]);
-                    
-                }
-            }
-            counter_i ++;
-            counter_j ++;
-        }
-        else {
-            if ((movie_i[3*counter_i]) > (movie_j[3*counter_j]))
-            {
-                counter_j ++;
-            }
-            else {
-                counter_i ++;
-            }
-        }
-    }
-    return res;
-}
-
-float pearson(vector<float> item_rats_i, vector<float> item_rats_j)
-{
-    float L;
-    float top = 0, bottom = 0;
-    float item_i_diff[item_rats_i.size()];
-    float item_j_diff[item_rats_j.size()];
-    float i_sum = 0, j_sum = 0;
-    L = item_rats_i.size();
-    if (L <= 1)
-    {
-        return 0;
-    }
-    for (int i = 0; i < L; i++)
-    {
-        i_sum += item_rats_i[i];
-        j_sum += item_rats_j[i];
-    }
-    float x_i_mean = i_sum / L;
-    float x_j_mean = j_sum / L;
-    float MSE_i = 0;
-    float MSE_j = 0;
-    
-    for(int i = 0; i < L; i++)
-    {
-        item_i_diff[i] = item_rats_i[i] - x_i_mean;
-        item_j_diff[i] = item_rats_j[i] - x_j_mean;
-        MSE_i += pow(item_i_diff[i], 2);
-        MSE_j += pow(item_j_diff[i], 2);
-    }
-    for (int i = 0; i < L; i++)
-    {
-        top += item_i_diff[i]*item_j_diff[i];
-    }
-    
-    top *= 1/(L-1);
-    bottom = sqrt(1/(L-1) * MSE_i)*sqrt(1/(L-1) * MSE_j);
-    
-    if (bottom == 0)
-    {
-        return 0;
-    }
-    return top/bottom;
-}
 
 float get_error(vector<float> real_ratings, vector<float> ratings)
 {
@@ -109,31 +26,6 @@ float get_error(vector<float> real_ratings, vector<float> ratings)
         summ += pow(ratings[i] - real_ratings[i], 2);
     }
     return sqrt(summ / 7000);
-}
-
-vector<float> merge_files(vector<float> ratings, string filename)
-{
-    string line;
-    ifstream rfile;
-    rfile.open(filename);
-    int counter = 0;
-    if (rfile.is_open()) {
-        while (getline(rfile, line)) {
-            istringstream iss(line);
-            vector<string> tokens{istream_iterator<string>{iss},
-                istream_iterator<string>{}};
-            ratings[counter] += stof (tokens[0],nullptr);
-            counter ++ ;
-        }
-    }
-    rfile.close();
-    rfile.clear();
-    return ratings;
-}
-
-float get_cij(vector<float> item_rats_i, vector<float> item_rats_j, int alpha)
-{
-    return pearson(item_rats_i, item_rats_j)*item_rats_i.size()/(item_rats_i.size()+alpha);
 }
 
 void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofile, bool probe)
