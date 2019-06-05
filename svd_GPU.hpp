@@ -33,6 +33,9 @@ class SVD {
     double * u_mat;
     double * v_mat;
 
+    // Initialize cublas handle
+    cublasHandle_t handle;
+
     vector<vector<double>> Y; // NUM_USERS x NUM_MOVIES
     
     // this should work but it isn't

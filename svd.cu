@@ -45,29 +45,44 @@ void SVD::set_values (int k, double et, double r, double ep,
 
 void SVD::initialize () {
 
-    // Initialize cublas handle
-    cublasHandle_t handle;
+    // Initialize handle
+    CUBLAS_CALL(cublasCreate(&handle));
 
     // Allocate device memory for the matrices
     CUDA_CALL(cudaMalloc((void **) &u_mat, 
                     NUM_USERS_SMALL * K * sizeof(double)));
 
     CUDA_CALL(cudaMalloc((void **) &v_mat, 
-                    NUM_MOVIES * K * sizeof(double)));    
+                    NUM_MOVIES * K * sizeof(double)));
+
+    // Convert U and V into flat arrays in a gross way
+
+    float * u_flat = new float[NUM_USERS_SMALL * K];
+    for (i = 0; i < NUM_USERS_SMALL; i++) {
+        copy(U[i].begin(), U[i].end(), u_flat);
+        u_flat += U[i].size();
+    }    
+
+    float * v_flat = new float[NUM_MOVIES * K];
+    for (i = 0; i < NUM_MOVIES; i++) {
+        copy(V[i].begin(), V[i].end(), v_flat);
+        v_flat += V[i].size();
+    }    
 
     // Copy over the data onto the device
-    // TODO: U is probs supposed to be in that strange flat format
-    CUBLAS_CALL(cublasSetMatrix(NUM_USERS_SMALL, K, sizeof(float), 
+    CUBLAS_CALL(cublasSetMatrix(NUM_USERS_SMALL, K, sizeof(double), 
                         U, NUM_USERS_SMALL, u_mat, NUM_USERS_SMALL));
     
-    CUBLAS_CALL(cublasSetMatrix(NUM_USERS_SMALL, K, sizeof(float), 
-                        U, NUM_USERS_SMALL, u_mat, NUM_USERS_SMALL));    
+    CUBLAS_CALL(cublasSetMatrix(NUM_MOVIES, K, sizeof(double), 
+                        v_flat, NUM_MOVIES, v_mat, NUM_MOVIES));   
 
-    float one = 1;
-    float zero = 0;
+    // TODO: do we need to transpose things for row/col major purposes???
+    // the default is col major but we have our data in row major??? 
 
+    // TODO: maybe make this function take in the two vectors and then return the
+    // pointers to the matrices so we wouldn't have to type it in every time?
 
-    cout << "done initialize GPU stuff \n";
+    cout << "done initializing GPU stuff \n";
 }
 
 void SVD::load_data() {
@@ -87,7 +102,6 @@ void SVD::load_data() {
     int uid, mid, date, rating;
     while (file >> uid >> mid >> date >> rating) {
         Y[uid-1][mid-1] = rating;
-        // cout << Y[uid-1][mid-1] << "\n";
     }
 
     cout << "made it here 2\n";
@@ -127,6 +141,35 @@ double SVD::get_err() {
            
             vector<double> urow = U[i];
             vector<double> vrow = V[i];
+
+            // TODO: do these need to be C style arrays??
+            // also they need to be copied into device memory too, right?
+            // am i doing this right?
+            // but the result is just a number right ahhhh????
+
+            double * dev_urow;
+            double * dev_vrow ;
+
+            // convert from vector to c array
+            double * urow_array = &urow[0];
+            double * vrow_array = &vrow[0];
+
+
+            // Allocate device memory for the vectors
+            CUDA_CALL(cudaMalloc((void **) &u_mat, 
+                            NUM_USERS_SMALL * K * sizeof(double)));
+
+            CUDA_CALL(cudaMalloc((void **) &v_mat, 
+                            NUM_MOVIES * K * sizeof(double)));
+
+            double * dot;
+            cublasDdot(handle, K, urow, 1, vrow, 1, dot);
+
+            squared_err += 0.5 * pow((Y_ij - dot), 2);
+
+
+            // float alpha = 0.5;
+            // cublasSscal(handle, M*N, &alpha, d_mymatrix, 1); 
 
             // TODO: squared_err += 0.5 * pow((Y_ij - urow.dot(vrow)), 2);
         }
