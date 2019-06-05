@@ -28,6 +28,14 @@ class SVD {
     int M, N, K;
     double eta, reg, eps, max_epochs;
 
+
+    // declare all the scary matrices
+    double * u_mat;
+    double * v_mat;
+
+    // Initialize cublas handle
+    cublasHandle_t handle;
+
     vector<vector<double>> Y; // NUM_USERS x NUM_MOVIES
     
     // this should work but it isn't
@@ -44,6 +52,8 @@ class SVD {
 
   public:
     void set_values(int, double, double, double, double);
+
+    void initialize(); 
 
     void load_data();
 
