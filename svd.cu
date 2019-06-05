@@ -142,36 +142,34 @@ double SVD::get_err() {
             vector<double> urow = U[i];
             vector<double> vrow = V[i];
 
-            // TODO: do these need to be C style arrays??
-            // also they need to be copied into device memory too, right?
-            // am i doing this right?
-            // but the result is just a number right ahhhh????
+            // DONE: squared_err += 0.5 * pow((Y_ij - urow.dot(vrow)), 2);
 
             double * dev_urow;
-            double * dev_vrow ;
+            double * dev_vrow;
 
-            // convert from vector to c array
+            // Convert from vector to c array
             double * urow_array = &urow[0];
             double * vrow_array = &vrow[0];
 
-
             // Allocate device memory for the vectors
-            CUDA_CALL(cudaMalloc((void **) &u_mat, 
-                            NUM_USERS_SMALL * K * sizeof(double)));
+            CUDA_CALL(cudaMalloc((void **) &dev_urow, K * sizeof(double)));
 
-            CUDA_CALL(cudaMalloc((void **) &v_mat, 
-                            NUM_MOVIES * K * sizeof(double)));
+            CUDA_CALL(cudaMalloc((void **) &dev_vrow, K * sizeof(double)));
 
-            double * dot;
-            cublasDdot(handle, K, urow, 1, vrow, 1, dot);
+            // Compute the dot product of urow and vrow
+            double * dev_dot;
+            cublasDdot(handle, K, dev_urow, 1, dev_vrow, 1, dev_dot);
+
+            // Copy the result from device to host machine
+            double dot;
+            cudaMemcpy(&dot, void *dev_dot, sizeof(double), cudaMemcpyDeviceToHost);
 
             squared_err += 0.5 * pow((Y_ij - dot), 2);
 
-
-            // float alpha = 0.5;
-            // cublasSscal(handle, M*N, &alpha, d_mymatrix, 1); 
-
-            // TODO: squared_err += 0.5 * pow((Y_ij - urow.dot(vrow)), 2);
+            // Free the cuda memory 
+            // TODO: do we need to use cublasDestroy????
+            cudaFree(dev_urow);
+            cudaFree(dev_vrow);
         }
     }
 
@@ -187,14 +185,60 @@ double SVD::get_err() {
 vector<double> SVD::grad_U(vector<double> U_i, vector<double> V_j, int Y_ij) {
     cout << "begin grad U\n";
 
-    vector<double> gradient;
-
-    // TODO: Replace with CuBLAS stuff
-
+    // DONE: convert to cuBLAS
     // double prod = U_i.adjoint() * V_j;
     // double Y_ij_d = (double) Y_ij;
     // VectorXd sq_err = V_j * (Y_ij_d - prod);
     // VectorXd gradient = (U_i * reg - sq_err) * eta;
+
+    double * dev_urow;
+    double * dev_vrow;
+
+    // convert from vector to c array
+    double * urow_array = &U_i[0];
+    double * vrow_array = &V_i[0];
+
+    // Allocate device memory for the vectors
+    CUDA_CALL(cudaMalloc((void **) &dev_urow, K * sizeof(double)));
+
+    CUDA_CALL(cudaMalloc((void **) &dev_vrow, K * sizeof(double)));  
+
+    // Compute the dot product of urow and vrow
+    double * dev_dot;
+    cublasDdot(handle, K, dev_urow, 1, dev_vrow, 1, dev_dot);  
+
+    // Copy the result from device to host machine
+    double dot;
+    cudaMemcpy(&dot, void *dev_dot, sizeof(double), cudaMemcpyDeviceToHost);
+
+    double Y_ij_d = (double) Y_ij;
+
+    // sq_err = V_j * (Y_ij_d - prod)
+    double alpha = -1 * Y_ij_d - dot;
+    cublasDscal(handle, K, &alpha, dev_vrow, 1); // dev_vrow now contains -sq_err
+
+    // gradient = (U_i * reg - sq_err) * eta;
+
+    // dev_urow now contains U_i * reg
+    cublasDscal(handle, K, &reg, dev_urow, 1); 
+
+    // dev_vrow now contains (U_i * reg) - sq_err
+    cublasDaxpy(handle, K, 1.0, dev_urow, 1, dev_vrow, 1);
+
+    // dev_vrow now contains (U_i * reg - sq_err) * eta
+    cublasDscal(handle, K, &eta, dev_vrow, 1); 
+
+    double * gradient_array;
+    // Copy over the data from the device
+    cudaMemcpy(gradient_array, void *dev_vrow, sizeof(double) * K, cudaMemcpyHostToDevice);
+
+    // convert c array to vector
+    vector<double> gradient (gradient_array, 
+            gradient_array + sizeof gradient_array / sizeof gradient_array[0]);
+
+    // Free the cuda memory
+    cudaFree(dev_urow);
+    cudaFree(dev_vrow);
 
     return gradient;
 }
@@ -202,14 +246,60 @@ vector<double> SVD::grad_U(vector<double> U_i, vector<double> V_j, int Y_ij) {
 vector<double> SVD::grad_V(vector<double> U_i, vector<double> V_j, int Y_ij) {
     cout << "begin grad V\n";
 
-    vector<double> gradient;
-
-    // TODO: Replace with CuBLAS stuff
-
+    // DONE: convert to cuBLAS
     // double prod = U_i.adjoint() * V_j;
     // double Y_ij_d = (double) Y_ij;
     // VectorXd sq_err = U_i * (Y_ij_d - prod);
     // VectorXd gradient = (V_j * reg - sq_err) * eta;
+
+    double * dev_urow;
+    double * dev_vrow;
+
+    // convert from vector to c array
+    double * urow_array = &U_i[0];
+    double * vrow_array = &V_i[0];
+
+    // Allocate device memory for the vectors
+    CUDA_CALL(cudaMalloc((void **) &dev_urow, K * sizeof(double)));
+
+    CUDA_CALL(cudaMalloc((void **) &dev_vrow, K * sizeof(double)));  
+
+    // Compute the dot product of urow and vrow
+    double * dev_dot;
+    cublasDdot(handle, K, dev_urow, 1, dev_vrow, 1, dev_dot);  
+
+    // Copy the result from device to host machine
+    double dot;
+    cudaMemcpy(&dot, void *dev_dot, sizeof(double), cudaMemcpyDeviceToHost);
+
+    double Y_ij_d = (double) Y_ij;
+
+    // sq_err = U_i * (Y_ij_d - prod)
+    double alpha = -1 * Y_ij_d - dot;
+    cublasDscal(handle, K, &alpha, dev_urow, 1); // dev_urow now contains -sq_err
+
+    // gradient = (V_j * reg - sq_err) * eta;
+
+    // dev_vrow now contains V_j * reg
+    cublasDscal(handle, K, &reg, dev_vrow, 1); 
+
+    // dev_urow now contains V_j * reg - sq_err
+    cublasDaxpy(handle, K, 1.0, dev_vrow, 1, dev_urow, 1);
+
+    // dev_urow now contains (V_j * reg - sq_errU_i * reg - sq_err) * eta
+    cublasDscal(handle, K, &eta, dev_urow, 1); 
+
+    double * gradient_array;
+    // Copy over the data from the device
+    cudaMemcpy(gradient_array, void *deu_vrow, sizeof(double) * K, cudaMemcpyHostToDevice);
+
+    // convert c array to vector
+    vector<double> gradient (gradient_array, 
+            gradient_array + sizeof gradient_array / sizeof gradient_array[0]);
+
+    // Free the cuda memory
+    cudaFree(dev_urow);
+    cudaFree(dev_vrow);
 
     return gradient;
 }
