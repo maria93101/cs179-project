@@ -1,20 +1,57 @@
-CXX = g++
-CXXFLAGS = -std=c++0x -Wall -pedantic-errors -mcmodel=large -g
+CC = /usr/bin/g++
 
-SRCS = cuda_knn.cpp gpu_data.cpp
-OBJS = ${SRCS:.cpp=.o}
+LD_FLAGS = -lrt
 
-MAIN = knn
+CUDA_PATH       ?= /usr/local/cuda
+CUDA_INC_PATH   ?= $(CUDA_PATH)/include
+CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
+CUDA_LIB_PATH   ?= $(CUDA_PATH)/lib
 
-all: ${MAIN}
+# CUDA code generation flags
+GENCODE_FLAGS   := -gencode arch=compute_30,code=sm_30 \
+        -gencode arch=compute_35,code=sm_35 \
+        -gencode arch=compute_50,code=sm_50 \
+        -gencode arch=compute_52,code=sm_52 \
+        -gencode arch=compute_60,code=sm_60 \
+        -gencode arch=compute_61,code=sm_61 \
+        -gencode arch=compute_61,code=compute_61
+        
+# Common binaries
+NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 
-svd:
-	${CXX} ${CXXFLAGS} svd.cpp -o svd
+# OS-specific build flags
+ifeq ($(shell uname),Darwin)
+	LDFLAGS       := -Xlinker -rpath $(CUDA_LIB_PATH) -L$(CUDA_LIB_PATH) -lcudart -lcufft
+	CCFLAGS   	  := -arch $(OS_ARCH)
+else
+	ifeq ($(OS_SIZE),32)
+		LDFLAGS   := -L$(CUDA_LIB_PATH) -lcudart
+		CCFLAGS   := -m32
+	else
+		CUDA_LIB_PATH := $(CUDA_LIB_PATH)64
+		LDFLAGS       := -L$(CUDA_LIB_PATH) -lcudart
+		CCFLAGS       := -m64
+	endif
+endif
 
-${MAIN}: 
-	${CXX} ${CXXFLAGS} ${SRCS} -o ${MAIN}
+# OS-architecture specific flags
+ifeq ($(OS_SIZE),32)
+	NVCCFLAGS := -m32
+else
+	NVCCFLAGS := -m64
+endif
 
-.cpp.o:
-	${CXX} ${CXXFLAGS} -c $< -o $@
+TARGETS = knn
+
+all: $(TARGETS)
+
+knn: cuda_knn.cpp gpu_data.cpp knn.o
+	$(CC) $^ -o $@ -O3 $(LDFLAGS) -Wall -I$(CUDA_INC_PATH)
+
+knn.o: knn.cu
+	$(NVCC) $(NVCCFLAGS) -O3 $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -I$(CUDA_INC_PATH) -o $@ -c $<
+
 clean:
-	${RM} ${MAIN} svd ${OBJS} *.o *~.
+	rm -f *.o $(TARGETS)
+
+again: clean $(TARGETS)

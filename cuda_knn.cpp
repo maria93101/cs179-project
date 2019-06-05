@@ -9,7 +9,7 @@
 #include<cmath>
 #include<algorithm>
 #include <cuda_runtime.h>
-
+#include "knn.cuh"
 #include <iterator>
 #include <sstream>
 #include <chrono>
@@ -18,15 +18,6 @@ using namespace std;
 using namespace std::chrono;
 // It takes about 5 minutes to run..
 
-float get_error(vector<float> real_ratings, vector<float> ratings)
-{
-    float summ = 0;
-    for (int i = 0; i < 7000; i++)
-    {
-        summ += pow(ratings[i] - real_ratings[i], 2);
-    }
-    return sqrt(summ / 7000);
-}
 
 void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofile, bool probe)
 {
@@ -81,10 +72,10 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
             cudaMemcpy(cij_lib[i], gpu_cij_lib[i], 17770 * sizeof(float),
                        cudaMemcpyHostToDevice);
         }
-        cudaMalloc((void **) &gpu_data, sizeof(Data)));
+        cudaMalloc((void **) &gpu_data, sizeof(Data));
         
         // Change into array.
-        double *arr = new float[user_list_movies.size()];
+        float *arr = new float[user_list_movies.size()];
         copy(user_list_movies.begin(), user_list_movies.end(), arr);
         
         float * gpu_user_list_movies;
@@ -96,7 +87,7 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         
         cudaMalloc((void **) &gpu_out_cij, user_list_movies.size()/3 * sizeof(float));
 
-        void cuda_get_cij_kernel(user_id, cur_movie_id, gpu_data, gpu_user_list_movies,
+        cuda_get_cij_kernel(128, 128, user_id, cur_movie_id, gpu_data, gpu_user_list_movies,
                                  gpu_out_cij, user_list_movies.size()/3, cij_lib, alpha);
         
         cudaMemcpy(cij, gpu_out_cij, user_list_movies.size()/3 * sizeof(float),
@@ -112,10 +103,10 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         cudaFree(cij_lib);
         //######################################################
         ////////////////////////////////////////////////////////
-        sort(cij.begin(), cij.end());
+        //sort(cij.begin(), cij.end());
         //######################################################
         float top = 0, bottom = 0;
-        int loops = cij.size() > k ? k : cij.size();
+        int loops = user_list_movies.size()/3 > k ? k : user_list_movies.size()/3;
         
         /////////////////////////////////////////////////////
         for (int i = 0; i < loops; i++)

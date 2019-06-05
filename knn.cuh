@@ -7,7 +7,7 @@
 
 
 #include <cufft.h>
-
+#include "gpu_data.h"
 int cudaGetPairedUserRatingsNumber(float* movie_i, float* movie_j, int size_i, int size_j);
 
 void

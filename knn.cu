@@ -8,7 +8,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include "knn.cuh"
-#include "gpu_data.h"
+//#include "gpu_data.h"
 
 
 
@@ -147,13 +147,13 @@ void cuda_get_cij_kernel(int user_id, int cur_movie_id, Data *data, float * user
         }
         if (cij_lib[cur_movie_id][id] == 0)
         {
-            float size_i = data->movie_user_num[cur_movie_id];
+            float size_i = data->movie_user_list_num(cur_movie_id);
 
-            float size_j = data->movie_user_num[cur_movie_id];
+            float size_j = data->movie_user_list_num(cur_movie_id);
 
             
-            float* movie_i = data->movie_user[cur_movie_id];
-            float* movie_j = data->movie_user[cur_movie_id];
+            float* movie_i = data->movie_user_list(cur_movie_id);
+            float* movie_j = data->movie_user_list(cur_movie_id);
             
             
             int cij_list_size = cudaGetPairedUserRatingsNumber(movie_i, movie_j, size_i, size_j);
@@ -161,13 +161,13 @@ void cuda_get_cij_kernel(int user_id, int cur_movie_id, Data *data, float * user
             float* movie_rat_i;
             float* movie_rat_j;
 
-            cudaMalloc(movie_rat_i, cij_list_size*sizeof(float));
-            cudaMalloc(movie_rat_j, cij_list_size*sizeof(float));
+            cudaMalloc((void **) &movie_rat_i, cij_list_size*sizeof(float));
+            cudaMalloc((void **) &movie_rat_j, cij_list_size*sizeof(float));
 
             cudaGetPairedUserRatings(movie_i, movie_j, size_i, size_j, true, movie_rat_i);
             cudaGetPairedUserRatings(movie_i, movie_j, size_i, size_j, false, movie_rat_j);
             
-            cij_lib[cur_movie_id][id] = get_cij(movie_rat_i, movie_rat_j, alpha);
+            cij_lib[cur_movie_id][id] = get_cij(movie_rat_i, movie_rat_j, alpha, cij_list_size);
         }
         gpu_out_cij[id] = cij_lib[cur_movie_id][id];
     }
@@ -177,5 +177,5 @@ void cuda_get_cij_kernel(int user_id, int cur_movie_id, Data *data, float * user
 void cudaCallCij(const unsigned int blocks,
         const unsigned int threadsPerBlock, int user_id, int cur_movie_id, Data *data, float * user_list_movies, float *gpu_out_cij, int cij_length, float **cij_lib, int alpha) {
     
-    cuda_get_cij_kernel<<<blocks, threadsPerBlock>>>(int user_id, int cur_movie_id, Data *data, float * user_list_movies, float *gpu_out_cij, int cij_length, float **cij_lib, int alpha);
+    cuda_get_cij_kernel<<<<blocks, threadsPerBlock>>>(user_id, cur_movie_id, data, user_list_movies, gpu_out_cij, cij_length, cij_lib, alpha);
 }

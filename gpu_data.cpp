@@ -39,15 +39,15 @@ float Data::get_avg_rats(int id, bool mu_orient)
     return summ / (paired_ratings.size()/3);
 }
 
-float* Data::movie_user_list(cur_movie_id){
-    vector<float> list = movie_user[cur_movie_id]
-    double *arr = new float[list.size()];
+float* Data::movie_user_list(int cur_movie_id){
+    vector<float> list = movie_user[cur_movie_id];
+    float *arr = new float[list.size()];
     copy(list.begin(), list.end(), arr);
     return arr;
 }
 
-int Data::movie_user_list_num(cur_movie_id){
-    vector<float> list = movie_user[cur_movie_id]
+int Data::movie_user_list_num(int cur_movie_id){
+    vector<float> list = movie_user[cur_movie_id];
     return list.size();
 }
 
