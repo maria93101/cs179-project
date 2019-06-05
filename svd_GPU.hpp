@@ -53,8 +53,6 @@ class SVD {
   public:
     void set_values(int, double, double, double, double);
 
-    void initialize(); 
-
     void load_data();
 
     void load_valid();
@@ -64,6 +62,8 @@ class SVD {
     vector<double> grad_U(vector<double>, vector<double>, int);
 
     vector<double> grad_V(vector<double>, vector<double>, int);
+
+    vector<double> sub_vectors(vector<double>, vector<double>);
 
     void train_model();
 
