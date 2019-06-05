@@ -41,7 +41,7 @@ else
 	NVCCFLAGS := -m64
 endif
 
-TARGETS = knn
+TARGETS = knn svd
 
 all: $(TARGETS)
 
@@ -49,6 +49,12 @@ knn: cuda_knn.cpp gpu_data.cpp knn.o
 	$(CC) $^ -o $@ -O3 $(LDFLAGS) -Wall -I$(CUDA_INC_PATH)
 
 knn.o: knn.cu
+	$(NVCC) $(NVCCFLAGS) -O3 $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -I$(CUDA_INC_PATH) -o $@ -c $<
+
+svd: svd_GPU.cpp
+	$(CC) $^ -o $@ -O3 $(LDFLAGS) -Wall -I$(CUDA_INC_PATH)
+
+svd.o: svd.cu
 	$(NVCC) $(NVCCFLAGS) -O3 $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -I$(CUDA_INC_PATH) -o $@ -c $<
 
 clean:

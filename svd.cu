@@ -16,7 +16,7 @@
 #include <chrono>
 #include <omp.h>
 
-#include "svd_GPU.hpp"
+#include "svd.cuh"
 
 using namespace std;
 using namespace Eigen;
@@ -42,46 +42,12 @@ void SVD::set_values (int k, double et, double r, double ep,
     cout << "done setting values\n";
 }
 
-
-void SVD::initialize () {
-
-    // Allocate device memory for the matrices
-    CUDA_CALL(cudaMalloc((void **) &u_mat, 
-                    NUM_USERS_SMALL * K * sizeof(double)));
-
-    CUDA_CALL(cudaMalloc((void **) &v_mat, 
-                    NUM_MOVIES * K * sizeof(double)));
-
-    // Convert U and V into flat arrays in a gross way
-
-    float * u_flat = new float[NUM_USERS_SMALL * K];
-    for (i = 0; i < NUM_USERS_SMALL; i++) {
-        copy(U[i].begin(), U[i].end(), u_flat);
-        u_flat += U[i].size();
-    }    
-
-    float * v_flat = new float[NUM_MOVIES * K];
-    for (i = 0; i < NUM_MOVIES; i++) {
-        copy(V[i].begin(), V[i].end(), v_flat);
-        v_flat += V[i].size();
-    }    
-
-    // Copy over the data onto the device
-    CUBLAS_CALL(cublasSetMatrix(NUM_USERS_SMALL, K, sizeof(double), 
-                        U, NUM_USERS_SMALL, u_mat, NUM_USERS_SMALL));
-    
-    CUBLAS_CALL(cublasSetMatrix(NUM_MOVIES, K, sizeof(double), 
-                        v_flat, NUM_MOVIES, v_mat, NUM_MOVIES));   
-
-    // TODO: do we need to transpose things for row/col major purposes???
-    // the default is col major but we have our data in row major??? 
-
-    cout << "done initializing GPU stuff \n";
-}
-
 void SVD::load_data() {
 
     cout << "load training data \n";
+
+    // Initialize handle
+    CUBLAS_CALL(cublasCreate(&handle));
 
     ifstream file("Archive/small_train.txt");
 
@@ -311,7 +277,7 @@ vector<double> SVD::grad_V(vector<double> U_i, vector<double> V_j, int Y_ij) {
 // Take in two vectors of doubles, convert to arrays in host memory, and 
 // perform a - b. Copy array to host memory and return in vector form.
 
-void SVD::sub_vectors(vector<double> a, vector<double> b) {
+vector<double> SVD::sub_vectors(vector<double> a, vector<double> b) {
 
     double * dev_a;
     double * dev_b;
@@ -495,37 +461,4 @@ void SVD::predict_valid() {
     // ofstream of("svd_val_results.txt");
     // ostream_iterator<double> output_iterator(of, "\n");
     // copy(val_predictions.begin(), val_predictions.end(), output_iterator);
-}
-
-int main () {
-    SVD svd;
-
-    cout << "begin SVD...\n";
-
-    // Initialize handle
-    CUBLAS_CALL(cublasCreate(&handle));
-
-    auto start = high_resolution_clock::now();
-    svd.load_data();
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop-start);
-    cout << "loading data took: " << duration.count() << endl;
-
-    svd.set_values(50, 0.05, 0.01, 0.0001, 100);
-
-    start = high_resolution_clock::now();
-    svd.train_model();
-    stop = high_resolution_clock::now();
-    duration = duration_cast<microseconds>(stop-start);
-    cout << "training model took: " << duration.count() << endl;
-
-    // svd.load_valid();
-
-    // start = high_resolution_clock::now();
-    // svd.predict_valid();
-    // stop = high_resolution_clock::now();
-    // duration = duration_cast<microseconds>(stop-start);
-    // cout << "predicting valid took: " << duration.count() << endl;
-
-    return 0;
 }
