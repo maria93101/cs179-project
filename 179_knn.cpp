@@ -60,8 +60,10 @@ float pearson(vector<float> item_rats_i, vector<float> item_rats_j)
 {
     float L;
     float top = 0, bottom = 0;
-    float item_i_diff[item_rats_i.size()];
-    float item_j_diff[item_rats_j.size()];
+	int size_i = item_rats_i.size();
+    int size_j = item_rats_j.size();
+    float *item_i_diff = new float[size_i];
+    float *item_j_diff = new float[size_j];
     float i_sum = 0, j_sum = 0;
     L = item_rats_i.size();
     if (L <= 1)
@@ -87,7 +89,9 @@ float pearson(vector<float> item_rats_i, vector<float> item_rats_j)
     }
     for (int i = 0; i < L; i++)
     {
-        top += item_i_diff[i]*item_j_diff[i];
+		float diff_i = item_i_diff[i];
+        float diff_j = item_j_diff[i];
+        top += diff_i * diff_j;
     }
     
     top *= 1/(L-1);
@@ -97,7 +101,10 @@ float pearson(vector<float> item_rats_i, vector<float> item_rats_j)
     {
         return 0;
     }
+	free(item_i_diff);
+	free(item_j_diff);
     return top/bottom;
+
 }
 
 float get_error(vector<float> real_ratings, vector<float> ratings)
@@ -220,10 +227,10 @@ int main()
     Data data;
     
     //data.read_data("valid.txt", true);
-    data.read_data("/Users/ziyanmo/outputs/small_train.txt", true);
+    data.read_data("resource/small_train.txt", true);
     
-    string ifile = "/Users/ziyanmo/outputs/small_probe.txt";
-    string ofile = "/Users/ziyanmo/outputs/small_knn_probe.txt";
+    string ifile = "resource/small_probe.txt";
+    string ofile = "resource/small_knn_probe.txt";
     
     
     float **cij_lib = new float*[17770];

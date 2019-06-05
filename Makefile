@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++0x -Wall -pedantic-errors -mcmodel=large -g
 
-SRCS =  179_knn.cpp data.cpp
+SRCS = cuda_knn.cpp gpu_data.cpp
 OBJS = ${SRCS:.cpp=.o}
 
 MAIN = knn
