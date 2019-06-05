@@ -70,7 +70,7 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         
         ////////////////////////////////////////////////////////
         Data * gpu_data;
-        cudaMalloc((void **) &gpu_data, sizeof(Data)));
+        cudaMalloc((void **) &gpu_data, sizeof(Data));
 
         float ** gpu_cij_lib;
         
@@ -96,11 +96,20 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         
         cudaMalloc((void **) &gpu_out_cij, user_list_movies.size()/3 * sizeof(float));
 
-        void cuda_get_cij_kernel(int user_id, int cur_movie_id, gpu_data, float * gpu_user_list_movies,
-                                 float *gpu_out_cij, user_list_movies.size()/3, float **cij_lib, int alpha);
+        void cuda_get_cij_kernel(user_id, cur_movie_id, gpu_data, gpu_user_list_movies,
+                                 gpu_out_cij, user_list_movies.size()/3, cij_lib, alpha);
         
         cudaMemcpy(cij, gpu_out_cij, user_list_movies.size()/3 * sizeof(float),
                    cudaMemcpyDeviceToHost);
+        
+        cudaFree(gpu_out_cij);
+        cudaFree(gpu_user_list_movies);
+        
+        for (int i = 0; i < 17770; i++)
+        {
+            cudaFree(cij_lib[i]);
+        }
+        cudaFree(cij_lib);
         //######################################################
         ////////////////////////////////////////////////////////
         sort(cij.begin(), cij.end());
@@ -129,10 +138,10 @@ int main()
     Data data;
     
     //data.read_data("valid.txt", true);
-    data.read_data("/Users/ziyanmo/outputs/small_train.txt", true);
+    data.read_data("resource/small_train.txt", true);
     
-    string ifile = "/Users/ziyanmo/outputs/small_probe.txt";
-    string ofile = "/Users/ziyanmo/outputs/small_knn_probe.txt";
+    string ifile = "resource/small_probe.txt";
+    string ofile = "resource/small_knn_probe.txt";
     
     
     float **cij_lib = new float*[17770];

@@ -14,7 +14,7 @@
 
 __global__
 int
-cudaGetPairedUserRatingsNumber(float* movie_i, float* movie_j, int size_i, int size_j,) {
+cudaGetPairedUserRatingsNumber(float* movie_i, float* movie_j, int size_i, int size_j) {
     int counter_i = 0;
     int counter_j = 0;
     int res_counter = 0;
