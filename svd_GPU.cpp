@@ -12,9 +12,14 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include <functional>
-#include <Eigen/Sparse>
 #include <chrono>
 #include <omp.h>
+
+#include <cusolverSp.h>
+#include <cuda_runtime.h>
+#include "cublas_v2.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "svd.cu"
 

@@ -2,12 +2,16 @@
 #define SVD_H
 
 #include <vector>
-#include <Eigen/Sparse>
 #include <stdint.h>
 #include <functional>
 
+#include <cusolverSp.h>
+#include <cuda_runtime.h>
+#include "cublas_v2.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 using namespace std;
-using namespace Eigen;
 
 const int NUM_USERS = 458293;
 
@@ -17,17 +21,9 @@ const int NUM_MOVIES_TINY = 3;
 const int NUM_USERS_SMALL = 10000;
 const int NUM_MOVIES = 17770;
 
-
-// declares a row-major sparse matrix type of double
-typedef SparseMatrix<double, RowMajor> sp_mat; 
-
-// row index, column index, value
-typedef Triplet<double> T;
-
 class SVD {
     int M, N, K;
     double eta, reg, eps, max_epochs;
-
 
     // declare all the scary matrices
     double * u_mat;
@@ -68,7 +64,6 @@ class SVD {
     void train_model();
 
     void predict_valid();
-
 };
 
 #endif //SVD_H
