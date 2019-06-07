@@ -1,0 +1,263 @@
+loading data took: 10446350
+done setting values
+begin training
+compute error
+computed error: 2130.98 ; time taken: 15315439
+begin epoch0
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 682.009 ; time taken: 15163985
+error reduction = 1
+computed updated error for epoch 0; total time taken: 93249633
+begin epoch1
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 260.279 ; time taken: 15516806
+error reduction = 0.291055
+computed updated error for epoch 1; total time taken: 89363883
+begin epoch2
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 195.893 ; time taken: 15941457
+error reduction = 0.0444358
+computed updated error for epoch 2; total time taken: 92021321
+begin epoch3
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 173.818 ; time taken: 16950216
+error reduction = 0.0152344
+computed updated error for epoch 3; total time taken: 89318117
+begin epoch4
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 159.093 ; time taken: 16267313
+error reduction = 0.010163
+computed updated error for epoch 4; total time taken: 97461778
+begin epoch5
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 149.172 ; time taken: 15503693
+error reduction = 0.00684664
+computed updated error for epoch 5; total time taken: 87373973
+begin epoch6
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 141.521 ; time taken: 15879179
+error reduction = 0.00528059
+computed updated error for epoch 6; total time taken: 92768890
+begin epoch7
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 136.248 ; time taken: 14908654
+error reduction = 0.00363898
+computed updated error for epoch 7; total time taken: 86794440
+begin epoch8
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 130.548 ; time taken: 16188446
+error reduction = 0.00393394
+computed updated error for epoch 8; total time taken: 92621546
+begin epoch9
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 126.548 ; time taken: 14471050
+error reduction = 0.0027601
+computed updated error for epoch 9; total time taken: 87137597
+begin epoch10
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 122.841 ; time taken: 15195621
+error reduction = 0.00255871
+computed updated error for epoch 10; total time taken: 87857814
+begin epoch11
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 119.586 ; time taken: 15246378
+error reduction = 0.00224612
+computed updated error for epoch 11; total time taken: 89999990
+begin epoch12
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 115.905 ; time taken: 14994567
+error reduction = 0.00254037
+computed updated error for epoch 12; total time taken: 85566618
+begin epoch13
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 113.324 ; time taken: 14929801
+error reduction = 0.00178152
+computed updated error for epoch 13; total time taken: 85002251
+begin epoch14
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 112.023 ; time taken: 15088320
+error reduction = 0.000898087
+computed updated error for epoch 14; total time taken: 88530454
+begin epoch15
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 109.126 ; time taken: 14499246
+error reduction = 0.00199919
+computed updated error for epoch 15; total time taken: 85310956
+begin epoch16
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 106.435 ; time taken: 15713072
+error reduction = 0.00185694
+computed updated error for epoch 16; total time taken: 86271452
+begin epoch17
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 105.781 ; time taken: 18750997
+error reduction = 0.000451434
+computed updated error for epoch 17; total time taken: 111481555
+begin epoch18
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 103.685 ; time taken: 16300837
+error reduction = 0.0014465
+computed updated error for epoch 18; total time taken: 96183067
+begin epoch19
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 102.297 ; time taken: 17543698
+error reduction = 0.000958011
+computed updated error for epoch 19; total time taken: 91728883
+begin epoch20
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 101.095 ; time taken: 16287039
+error reduction = 0.000829726
+computed updated error for epoch 20; total time taken: 99979142
+begin epoch21
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 99.378 ; time taken: 18737633
+error reduction = 0.00118483
+computed updated error for epoch 21; total time taken: 103156417
+begin epoch22
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 98.4246 ; time taken: 18350586
+error reduction = 0.000657992
+computed updated error for epoch 22; total time taken: 101848335
+begin epoch23
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 97.2981 ; time taken: 16881480
+error reduction = 0.000777416
+computed updated error for epoch 23; total time taken: 104529309
+begin epoch24
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 96.9901 ; time taken: 14550193
+error reduction = 0.000212578
+computed updated error for epoch 24; total time taken: 89890876
+begin epoch25
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 95.2923 ; time taken: 15082226
+error reduction = 0.0011717
+computed updated error for epoch 25; total time taken: 85667285
+begin epoch26
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 94.506 ; time taken: 14839804
+error reduction = 0.000542683
+computed updated error for epoch 26; total time taken: 85316509
+begin epoch27
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 93.8246 ; time taken: 15260151
+error reduction = 0.000470265
+computed updated error for epoch 27; total time taken: 85744306
+begin epoch28
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 92.6533 ; time taken: 15169607
+error reduction = 0.000808377
+computed updated error for epoch 28; total time taken: 85797114
+begin epoch29
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 91.9375 ; time taken: 15471141
+error reduction = 0.000494002
+computed updated error for epoch 29; total time taken: 87512069
+begin epoch30
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 91.4714 ; time taken: 14952761
+error reduction = 0.000321707
+computed updated error for epoch 30; total time taken: 85668807
+begin epoch31
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 91.024 ; time taken: 15368669
+error reduction = 0.000308744
+computed updated error for epoch 31; total time taken: 93687905
+begin epoch32
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 90.1131 ; time taken: 15328586
+error reduction = 0.000628642
+computed updated error for epoch 32; total time taken: 91739433
+begin epoch33
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 89.7659 ; time taken: 20778893
+error reduction = 0.000239613
+computed updated error for epoch 33; total time taken: 100869962
+begin epoch34
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 88.9731 ; time taken: 17284969
+error reduction = 0.000547155
+computed updated error for epoch 34; total time taken: 101843065
+begin epoch35
+completed permutation
+updated U, V for all points in training set
+compute error
+computed error: 89.0658 ; time taken: 18263112
+error reduction = -6.39983e-05
+ YEET
+completed training, e_in = 89.0658
+training model took: 3337606433
+load validation data
+predict probe
+completed predictions for probe set, e_out = 0.996808
+predicting valid took: 305761

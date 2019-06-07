@@ -35,7 +35,7 @@ class SVD {
     vector<vector<double>> Y; // NUM_USERS x NUM_MOVIES
     
     // this should work but it isn't
-    // vector<vector<double>> Y(NUM_USERS_SMALL, vector<double>(NUM_MOVIES));
+    // vector<vector<double>> Y (NUM_USERS_SMALL, vector<double>(NUM_MOVIES, 0));
 
     vector<vector<double>> U; // NUM_USERS X K
     vector<vector<double>> V; // NUM_MOVIES X K

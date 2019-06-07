@@ -16,7 +16,6 @@
 #include <omp.h>
 
 #include "svd.cuh"
-// #include "helper_cuda.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -28,6 +27,7 @@ struct c_unique {
   int operator()() {return current++;}
 } UniqueNumber;
 
+// Set the hyperparameters for SVD
 void SVD::set_values (int k, double et, double r, double ep,
                       double max_ep) {
     M = NUM_USERS_SMALL;   
@@ -41,6 +41,7 @@ void SVD::set_values (int k, double et, double r, double ep,
     cout << "done setting values\n";
 }
 
+// Load the training data into a two dimensional vector
 void SVD::load_data() {
 
     cout << "load training data \n";
@@ -57,30 +58,11 @@ void SVD::load_data() {
         Y.push_back(temp);
     }
 
-    cout << "made it here \n";
     int uid, mid, date, rating;
     while (file >> uid >> mid >> date >> rating) {
         Y[uid-1][mid-1] = rating;
     }
-
-    cout << "made it here 2\n";
 }
-
-// void SVD::load_valid() {
-//     //  CROSS VALIDATING ON VALID AND HIDDEN (4% OF ALL TRAINING DATA)
-
-//     cout << "load validation data\n";
-
-//     //ifstream file("../data/Archive/tiny_qual.txt"); // actually qual.txt
-//     ifstream file("Archive/small_probe.txt");
-
-//     int uid, mid, date, rating;
-//     while (file >> uid >> mid >> date >> rating) {
-//         val_uid.push_back(uid-1);
-//         val_mid.push_back(mid-1);
-//         val_ratings.push_back(rating);
-//     }
-// }
 
 double SVD::get_err() {
     auto start = high_resolution_clock::now();
@@ -101,7 +83,8 @@ double SVD::get_err() {
             vector<double> urow = U[i];
             vector<double> vrow = V[j];
 
-            // DONE: squared_err += 0.5 * pow((Y_ij - urow.dot(vrow)), 2);
+            // DONE: Convert to cuBLAS
+            // squared_err += 0.5 * pow((Y_ij - urow.dot(vrow)), 2);
 
             double * dev_urow;
             double * dev_vrow;
@@ -110,19 +93,30 @@ double SVD::get_err() {
             double * urow_array = &urow[0];
             double * vrow_array = &vrow[0];
 
+            cout << "finished converting\n";
+
             // Allocate device memory for the vectors
             cudaMalloc((void **) &dev_urow, K * sizeof(double));
 
             cudaMalloc((void **) &dev_vrow, K * sizeof(double));
 
+            cout << "we have memory\n";
+
             // Copy arrays from the host to the device
             cudaMemcpy(dev_urow, urow_array, sizeof(double) * K, cudaMemcpyHostToDevice);
             cudaMemcpy(dev_vrow, vrow_array, sizeof(double) * K, cudaMemcpyHostToDevice);
 
+            cout << "we copied memory\n";
+
             // Compute the dot product of urow and vrow
             double * dev_dot;
             cudaMalloc((void **) &dev_dot, sizeof(double));
+
+            cout << "about to take the dot\n";
+
             cublasDdot(handle, K, dev_urow, 1, dev_vrow, 1, dev_dot);
+
+            cout << "we took the dot product\n";
 
             // Copy the result from device to host machine
             double dot;
@@ -131,7 +125,6 @@ double SVD::get_err() {
             squared_err += 0.5 * pow((Y_ij - dot), 2);
 
             // Free the cuda memory 
-            // TODO: do we need to use cublasDestroy????
             cudaFree(dev_urow);
             cudaFree(dev_vrow);
         }
@@ -288,13 +281,12 @@ vector<double> SVD::grad_V(vector<double> U_i, vector<double> V_j, int Y_ij) {
 
 // Take in two vectors of doubles, convert to arrays in host memory, and 
 // perform a - b. Copy array to host memory and return in vector form.
-
 vector<double> SVD::sub_vectors(vector<double> a, vector<double> b) {
 
     double * dev_a;
     double * dev_b;
 
-    // multiply b by -1 element-wise
+    // multiply b by -1 element-wise to sub instead of add
     for (uint i = 0; i < b.size(); ++i)
     {
         b[i] = b[i] * -1;
@@ -318,6 +310,7 @@ vector<double> SVD::sub_vectors(vector<double> a, vector<double> b) {
 
     double * sub_array;
     cudaMalloc((void **) &sub_array, K * sizeof(double));
+
     // Copy over the data from the device
     cudaMemcpy(sub_array, dev_b, sizeof(double) * K, cudaMemcpyDeviceToHost);
 
@@ -338,7 +331,7 @@ void SVD::train_model() {
 
     cout << "begin training\n";
 
-    // fill feature matrices with random 0-0.5 values
+    // TODO: Fill feature matrices with random -0.5 5to 0.5 values
     // double lower_bound = -0.5;
     // double upper_bound = 0.5;
     // uniform_real_distribution<double> unif(lower_bound, upper_bound);
@@ -346,37 +339,30 @@ void SVD::train_model() {
     // generate(U.begin(), U.end(), unif(re));
     // generate(V.begin(), V.end(), unif(re));
 
-    // for now, just 0
-    // TODO: fix, this is really stupid
+    // For now, just set feature matrices to 0
     for (int i = 0; i < NUM_USERS_SMALL; ++i)
     {
-        vector<double> temp;
-        for (int j = 0; i < K; ++j)
-        {
-            temp.push_back(0.0);
-        }
+        vector<double> temp(K, 0);
         U.push_back(temp);
     }
 
     for (int i = 0; i < NUM_MOVIES; ++i)
     {
-        vector<double> temp;
-        for (int j = 0; i < K; ++j)
-        {
-            temp.push_back(0.0);
-        }
+        vector<double> temp(K, 0);
         V.push_back(temp);
     }
 
-    // get initial error
+    // Get initial error to use in stopping condition 
     double err0 = get_err();
     double err = err0;
     double err1 = 0.0;
 
+    // Create index vector to shuffle the points after every epoch
     vector<int> indices(NUM_USERS_SMALL);
     indices.reserve(NUM_USERS_SMALL);
 
     generate (indices.begin(), indices.end(), UniqueNumber);
+
 
     // continue for max_epochs
     for (int e=0; e<max_epochs; ++e) {
@@ -395,6 +381,8 @@ void SVD::train_model() {
         for (vector<int>::iterator it=indices.begin(); it!=indices.end(); ++it) {
             // potential problem: no easy way to only iterate through the 
             // non zero values like there was for eigen so it might be slower
+            // creating our own GPU compatible version of sparse matrix 
+            // would be too complicated.
 
             for (auto row = Y.begin(); row != Y.end(); ++row)
             {
@@ -406,6 +394,7 @@ void SVD::train_model() {
                     // Update U
                     vector<double> gradu = grad_U(U[i], V[j], Y_ij);
                     vector<double> urow = U[i];
+
                     // DONE: Convert U[i] = urow - gradu to CuBLAS
                     U[i] = sub_vectors(urow, gradu);
 
@@ -414,6 +403,7 @@ void SVD::train_model() {
                     // Update V
                     vector<double> gradv = grad_V(U[i], V[j], Y_ij);
                     vector<double> vrow = V[i];
+
                     // DONE: Convert V[i] = vrow - gradv to CuBLAS
                     V[i] = sub_vectors(vrow, gradv);
 
@@ -448,34 +438,4 @@ void SVD::train_model() {
 
     cout << "completed training, e_in = " << e_in << "\n";
     }
-}
-
-void SVD::predict_valid() {
-    // cout << "predict probe\n";
-
-    // double squared_err = 0.0;
-
-    // for (int i=0; i<val_uid.size(); ++i) {
-    //     int uid = val_uid.at(i);
-    //     int mid = val_mid.at(i);
-    //     double rating = (double) val_ratings.at(i);
-
-    //     VectorXd urow = U.row(uid);
-    //     VectorXd vrow = V.row(mid);
-
-    //     double prediction = urow.adjoint() * vrow;
-
-    //     val_predictions.push_back(rating);
-
-    //     squared_err += 0.5 * pow((rating - prediction), 2);
-    // }
-
-    // squared_err = squared_err / val_uid.size();
-
-    // cout << "completed predictions for probe set, e_out = " << squared_err << "\n";
-
-    // // yeet it out to a file
-    // ofstream of("svd_val_results.txt");
-    // ostream_iterator<double> output_iterator(of, "\n");
-    // copy(val_predictions.begin(), val_predictions.end(), output_iterator);
 }

@@ -29,27 +29,23 @@ int main () {
 
     cout << "begin SVD...\n";
 
+    // Load the training data
     auto start = high_resolution_clock::now();
     svd.load_data();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop-start);
     cout << "loading data took: " << duration.count() << endl;
 
+    // Set the hyperparameters for SVD
+    // (k, learning rate, regulariation, num_epochs)
     svd.set_values(50, 0.05, 0.01, 0.0001, 100);
 
+    // Train the model
     start = high_resolution_clock::now();
     svd.train_model();
     stop = high_resolution_clock::now();
     duration = duration_cast<microseconds>(stop-start);
     cout << "training model took: " << duration.count() << endl;
-
-    // svd.load_valid();
-
-    // start = high_resolution_clock::now();
-    // svd.predict_valid();
-    // stop = high_resolution_clock::now();
-    // duration = duration_cast<microseconds>(stop-start);
-    // cout << "predicting valid took: " << duration.count() << endl;
 
     return 0;
 }
