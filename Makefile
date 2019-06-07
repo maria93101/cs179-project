@@ -36,7 +36,7 @@ endif
 
 # OS-architecture specific flags
 ifeq ($(OS_SIZE),32)
-	NVCCFLAGS := -m32
+	NVCCFLAGS := -m32 
 else
 	NVCCFLAGS := -m64
 endif
