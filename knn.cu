@@ -19,7 +19,14 @@ inline void gpu_assert(cudaError_t code, const char *file, int line,
 
 #define BW 1024
 
-// Uses reduction to quickly add things. 
+template<typename T> void cudaMemsetType(T *dev_ptr, T val, int n_vals)
+ {	
+    thrust::device_ptr<T> thrust_dev_ptr(dev_ptr);
+    thrust::fill(thrust_dev_ptr, thrust_dev_ptr + n_vals, val);	
+}
+
+
+// Uses reduction to quickly add things.
 __global__ void correlationKernel(float* cij, float*sum, int total_size, int begin)
 {
     extern __shared__ float shmem[];
