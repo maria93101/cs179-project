@@ -178,8 +178,8 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         int loops = user_list_movies.size()/3 > k ? k : user_list_movies.size()/3;
         
         // Calling the summing kernel to get the sums.
-        top = correlationKernelSum(cijr, loops, user_list_movies.size()/3);
-        bottom = correlationKernelSum(cij, loops, user_list_movies.size()/3);
+        top = correlationKernelSum(cijr, loops);
+        bottom = correlationKernelSum(cij, loops);
         float r_hat = bottom == 0? 3 : top/bottom;
         e_out += pow((val_ratings[i] - r_hat), 2);
 
