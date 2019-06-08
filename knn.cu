@@ -27,7 +27,7 @@ template<typename T> void cudaMemsetType(T *dev_ptr, T val, int n_vals)
 
 
 // Uses reduction to quickly add things.
-__global__ void correlationKernel(float* cij, float*sum, int total_size, int begin)
+__global__ void correlationKernel(float* cij, float*sum, int total_size)
 {
     extern __shared__ float shmem[];
 
