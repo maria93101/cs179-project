@@ -35,9 +35,27 @@ void merge(float *src, float *dst, float* followsrc, float* followdst, int low, 
 		}
 		else
 		{
-			dst[i] = src[b_counter];
-			followdst[i] = followsrc[b_counter];
-			b_counter ++;
+			if (src[a_counter] == src[b_counter])
+			{
+				if (followsrc[a_counter] > followsrc[b_counter])
+				{
+					dst[i] = src[a_counter];
+					 followdst[i] = followsrc[a_counter];
+					a_counter ++;
+				}
+				else
+				{
+					 dst[i] = src[b_counter];
+					followdst[i] = followsrc[b_counter];
+					b_counter ++;
+				}
+			}
+			else
+			{
+				dst[i] = src[b_counter];
+				followdst[i] = followsrc[b_counter];
+				b_counter ++;
+			}
 		}
 	}
 }
