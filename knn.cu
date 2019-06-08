@@ -19,47 +19,7 @@ inline void gpu_assert(cudaError_t code, const char *file, int line,
 
 #define BW 1024
 
-/*
- * This function merges 2 lists [low to mid), [mid to hi) not in places.
-*/
-__device__ 
-void merge(float *src, float *dst, float* followsrc, float* followdst, int low, int mid, int hi)
-{
-	int a_counter = low;
-	int b_counter = mid;
-	for (int i = low; i < hi; i++) {
-		if (a_counter < mid && (b_counter >= hi || src[a_counter] > src[b_counter])) {
-			dst[i] = src[a_counter];
-			followdst[i] = followsrc[a_counter];
-			a_counter ++;
-		}
-		else
-		{
-			if (src[a_counter] == src[b_counter])
-			{
-				if (followsrc[a_counter] > followsrc[b_counter])
-				{
-					dst[i] = src[a_counter];
-					 followdst[i] = followsrc[a_counter];
-					a_counter ++;
-				}
-				else
-				{
-					 dst[i] = src[b_counter];
-					followdst[i] = followsrc[b_counter];
-					b_counter ++;
-				}
-			}
-			else
-			{
-				dst[i] = src[b_counter];
-				followdst[i] = followsrc[b_counter];
-				b_counter ++;
-			}
-		}
-	}
-}
-
+// Uses reduction to quickly add things. 
 __global__ void correlationKernel(float* cij, float*sum, int total_size, int begin)
 {
     extern __shared__ float shmem[];
@@ -87,7 +47,9 @@ __global__ void correlationKernel(float* cij, float*sum, int total_size, int beg
     }
 }
 
-float correlationKernelSum(float* cij, int total_size, int begin)
+// Called to get the sum from correlationKernel.
+// cij is a lot larger than total_size, but we only want that much of it.
+float correlationKernelSum(float* cij, int total_size)
 {
     // Inialize loss on the device to be zero
     float sum, *d_sum;
@@ -102,7 +64,7 @@ float correlationKernelSum(float* cij, int total_size, int begin)
     // Accumulate the total loss on the device by invoking a kernel
     int n_blocks = std::min(65535, (total_size + BW  - 1) / BW);
 
-    correlationKernel <<<n_blocks,  BW, BW * sizeof(float)>>>(gpu_cij, d_sum, total_size, begin);
+    correlationKernel <<<n_blocks,  BW, BW * sizeof(float)>>>(gpu_cij, d_sum, total_size);
 
     gpu_errchk( cudaMemcpy(&sum, d_sum, sizeof(float), cudaMemcpyDeviceToHost) );
     gpu_errchk( cudaFree(d_sum) );
@@ -112,6 +74,8 @@ float correlationKernelSum(float* cij, int total_size, int begin)
 }
 
 
+
+// This using threads to help us sort in parallel.
 __global__
 void mergeSortKernel( float *src, float*dst, float * followsrc, float * followdst, int section, int num_section, int total_size)
 {
@@ -120,8 +84,7 @@ void mergeSortKernel( float *src, float*dst, float * followsrc, float * followds
 	int mid, hi; 	
 	int slice = 0;
 
-	//printf("threadidx: %s", thread_index);
-	// Now we do stuff for each slice. 
+	// Now we do stuff for each section.
 	while(slice < num_section && low < total_size)
 	{
 		mid = min(low + section/2, total_size);
@@ -133,7 +96,51 @@ void mergeSortKernel( float *src, float*dst, float * followsrc, float * followds
 	
 }
 
+/*
+ * This function merges 2 lists [low to mid), [mid to hi) not in places.
+ */
+__device__
+void merge(float *src, float *dst, float* followsrc, float* followdst, int low, int mid, int hi)
+{
+    int a_counter = low;
+    int b_counter = mid;
+    for (int i = low; i < hi; i++) {
+        if (a_counter < mid && (b_counter >= hi || src[a_counter] > src[b_counter])) {
+            dst[i] = src[a_counter];
+            followdst[i] = followsrc[a_counter];
+            a_counter ++;
+        }
+        else
+        {
+            if (src[a_counter] == src[b_counter])
+            {
+                if (followsrc[a_counter] > followsrc[b_counter])
+                {
+                    dst[i] = src[a_counter];
+                    followdst[i] = followsrc[a_counter];
+                    a_counter ++;
+                }
+                else
+                {
+                    dst[i] = src[b_counter];
+                    followdst[i] = followsrc[b_counter];
+                    b_counter ++;
+                }
+            }
+            else
+            {
+                dst[i] = src[b_counter];
+                followdst[i] = followsrc[b_counter];
+                b_counter ++;
+            }
+        }
+    }
+}
 
+/*
+ * This function allocates memory for the device objects, and calls the merge kernel.
+ * Here, we start with small sections and sort them, and doubling the section size each time.
+ */
 void callMergeKernel(const unsigned int blocks, const unsigned int threadsPerBlock, float * cij, float * cijr, int total_size)
 {
     //Allocate GPU...

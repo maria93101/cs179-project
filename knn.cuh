@@ -8,7 +8,7 @@
 
 #include <cufft.h>
 
-float correlationKernelSum(float* cij, int total_size, int);
+float correlationKernelSum(float* cij, int total_size);
 
 void merge(float *src, float *dst, float* followsrc, float* followdst, int low, int mid, int hi);
 
