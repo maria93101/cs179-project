@@ -182,7 +182,7 @@ void knn(Data *data, float *cij_lib, int alpha, int k, string ifile, string ofil
         //######################################################
         float top = 0, bottom = 0;
         int loops = user_list_movies.size()/3 > k ? k : user_list_movies.size()/3;
-        
+
         /////////////////////////////////////////////////////
         for (int j = 0; j < loops; j++)
         {

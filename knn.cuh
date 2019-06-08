@@ -7,7 +7,14 @@
 
 
 #include <cufft.h>
- int cudaGetPairedUserRatingsNumber(float*, int size_i, int, int );
+
+float correlationKernelSum(float* cij, int total_size, int);
+
+int cudaGetPairedUserRatingsNumber(float*, int size_i, int, int );
+
+void merge(float *src, float *dst, float* followsrc, float* followdst, int low, int mid, int hi);
+
+void callMergeKernel(const unsigned int blocks, const unsigned intthreadsPerBlock, float*, float*, int);
 
  void
 cudaGetPairedUserRatings(float* movie_i, float* movie_j, int size_i, bool first, float* res);

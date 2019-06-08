@@ -2,6 +2,12 @@ CC = /usr/bin/g++
 
 LD_FLAGS = -lrt
 
+
+CXX = g++
+CXXFLAGS = -std=c++0x -Wall -pedantic-errors -mcmodel=large -g
+SRCS =  179_knn.cpp data.cpp
+OBJS = ${SRCS:.cpp=.o}
+
 CUDA_PATH       ?= /usr/local/cuda
 CUDA_INC_PATH   ?= $(CUDA_PATH)/include
 CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
@@ -46,11 +52,14 @@ TARGETS = knn svd
 
 all: $(TARGETS)
 
-knn: cuda_knn.cpp gpu_data.cpp knn.o
+knn: merge_knn.cpp gpu_data.cpp knn.o
 	$(CC) $^ -o $@ -O3 $(LDFLAGS) -Wall -I$(CUDA_INC_PATH)
 
 knn.o: knn.cu
 	$(NVCC) $(NVCCFLAGS) -O3 $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -I$(CUDA_INC_PATH) -o $@ -c $<
+
+cpu_knn: 
+	${CXX} ${CXXFLAGS} 179_knn.cpp data.cpp -o cpu_knn
 
 svd: svd_GPU.cpp
 	$(CC) $^ -o $@ -O3 $(LDFLAGS) -Wall -I$(CUDA_INC_PATH) $(CUDA_LIBS) 
@@ -59,6 +68,6 @@ svd.o: svd.cu
 	$(NVCC) $(NVCCFLAGS) -O3 $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -I$(CUDA_INC_PATH) $(CUDA_LIBS)  -o $@ -c $<
 
 clean:
-	rm -f *.o $(TARGETS)
+	rm -f *.o $(TARGETS) cpu_knn
 
-again: clean $(TARGETS)
+again: clean $(TARGETS) cpu_knn

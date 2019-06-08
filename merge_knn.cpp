@@ -1,4 +1,3 @@
-
 #include<iostream>
 #include <fstream>
 #include<vector>
@@ -8,7 +7,7 @@
 #include <tuple>
 #include<cmath>
 #include<algorithm>
-
+#include "knn.cuh"
 #include <iterator>
 #include <sstream>
 #include <chrono>
@@ -155,7 +154,7 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
     vector<int> val_ratings;
     ifstream file(ifile);
     int uid, mid, date, rating;
-    float e_out = 0;
+    float e_out = 0, corr_e_out=0;
     if (probe)
     {
         while (file >> uid >> mid >> date >> rating) {
@@ -179,9 +178,12 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         vector<float> user_list_movies = data->user_movie[user_id];
         
         // This could be an array if it doesnt have pair.
-        vector<pair<float, float>> cij;
-        
-        ////////////////////////////////////////////////////////
+		//vector<float> cij; 
+		//vector<float> cijr;        
+        float * cij = new float[user_list_movies.size()/3];
+		float * cijr = new float[user_list_movies.size()/3];
+		vector<pair<float, float>> cijvec;
+		////////////////////////////////////////////////////////
         for (int j = 0; j < user_list_movies.size()/3; j++)
         {
             int id = user_list_movies[3*j];
@@ -197,24 +199,34 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
                 
                 cij_lib[cur_movie_id][id] = get_cij(movie_rat_i, movie_rat_j, alpha);
             }
-            cij.push_back(make_pair(cij_lib[cur_movie_id][id], cij_lib[cur_movie_id][id]*user_list_movies[3*j+1]));
+			cij[j] = (cij_lib[cur_movie_id][id]);
+			cijr[j] = (cij_lib[cur_movie_id][id]*user_list_movies[3*j+1]);
+			cijvec.push_back(make_pair(cij_lib[cur_movie_id][id], cij_lib[cur_movie_id][id]*user_list_movies[3*j+1]));
         }
-        //######################################################
-        ////////////////////////////////////////////////////////
-        sort(cij.begin(), cij.end());
-        //######################################################
+		sort(cijvec.begin(), cijvec.end());
+		callMergeKernel(128, 128, cij, cijr, user_list_movies.size()/3);		
         float top = 0, bottom = 0;
-        int loops = cij.size() > k ? k : cij.size();
-        
-        /////////////////////////////////////////////////////
-        for (int j = 0; j < loops; j++)
-        {
-            top += cij[cij.size() - 1 - j].second;
-            bottom += cij[cij.size() - 1 - j].first;
-        }
-        //######################################################
+        int loops = user_list_movies.size()/3 > k ? k : user_list_movies.size()/3;
+        top = correlationKernelSum(cijr, loops, user_list_movies.size()/3);//cij[cij.size() - 1 - i].second;
+        bottom = correlationKernelSum(cij, loops, user_list_movies.size()/3);//bottom += cij[cij.size() - 1 - i].first;
         float r_hat = bottom == 0? 3 : top/bottom;
         e_out += pow((val_ratings[i] - r_hat), 2);
+	
+		float corr_top = 0, corr_bot = 0;
+		        /////////////////////////////////////////////////////
+        for (int j = 0; j < loops; j++)
+        {
+            corr_top += cijvec[cijvec.size() - 1 - j].second;
+            corr_bot += cijvec[cijvec.size() - 1 - j].first;
+        }
+        //######################################################
+        r_hat = corr_bot == 0? 3 : corr_top/corr_bot;
+        corr_e_out += pow((val_ratings[i] - r_hat), 2);
+		cout << "e_out "<<e_out <<", corr e_out: "<<corr_e_out<<endl;
+		cout << "top "<<top <<", corr top: "<<corr_top<<endl;
+		cout << "bottom "<<bottom <<", corr bottom: "<<corr_bot<<endl;
+
+
     }
     e_out = pow(e_out / val_uid.size(), 0.5) ;
     cout << "error: "<<e_out<<endl;
@@ -257,4 +269,3 @@ int main()
     
     return 0;
 }
-
