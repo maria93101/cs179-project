@@ -14,7 +14,8 @@
 //Single line comment
 using namespace std;
 using namespace std::chrono;
-// It takes about 5 minutes to run..
+
+// This gives us the movie ratings for the 2 movies by the same user.
 vector<float> get_paired_user_ratings(vector<float> movie_i,
                                       vector<float> movie_j, bool first)
 {
@@ -106,36 +107,6 @@ float pearson(vector<float> item_rats_i, vector<float> item_rats_j)
 
 }
 
-float get_error(vector<float> real_ratings, vector<float> ratings)
-{
-    float summ = 0;
-    for (int i = 0; i < 7000; i++)
-    {
-        summ += pow(ratings[i] - real_ratings[i], 2);
-    }
-    return sqrt(summ / 7000);
-}
-
-vector<float> merge_files(vector<float> ratings, string filename)
-{
-    string line;
-    ifstream rfile;
-    rfile.open(filename);
-    int counter = 0;
-    if (rfile.is_open()) {
-        while (getline(rfile, line)) {
-            istringstream iss(line);
-            vector<string> tokens{istream_iterator<string>{iss},
-                istream_iterator<string>{}};
-            ratings[counter] += stof (tokens[0],nullptr);
-            counter ++ ;
-        }
-    }
-    rfile.close();
-    rfile.clear();
-    return ratings;
-}
-
 float get_cij(vector<float> item_rats_i, vector<float> item_rats_j, int alpha)
 {
     return pearson(item_rats_i, item_rats_j)*item_rats_i.size()/(item_rats_i.size()+alpha);
@@ -177,12 +148,12 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
         int cur_movie_id = val_mid[i];
         vector<float> user_list_movies = data->user_movie[user_id];
         
-        // This could be an array if it doesnt have pair.
-		//vector<float> cij; 
-		//vector<float> cijr;        
         float * cij = new float[user_list_movies.size()/3];
 		float * cijr = new float[user_list_movies.size()/3];
 		vector<pair<float, float>> cijvec;
+        
+        //Using pearson's correlation to get a list of correlations for
+        // the list of movies.
 		////////////////////////////////////////////////////////
         for (int j = 0; j < user_list_movies.size()/3; j++)
         {
@@ -196,36 +167,21 @@ void knn(Data *data, float **cij_lib, int alpha, int k, string ifile, string ofi
             {
                 vector <float> movie_rat_i = get_paired_user_ratings( data->movie_user[cur_movie_id], data->movie_user[id], true);
                 vector <float> movie_rat_j = get_paired_user_ratings( data->movie_user[cur_movie_id], data->movie_user[id], false);
-                
                 cij_lib[cur_movie_id][id] = get_cij(movie_rat_i, movie_rat_j, alpha);
             }
 			cij[j] = (cij_lib[cur_movie_id][id]);
 			cijr[j] = (cij_lib[cur_movie_id][id]*user_list_movies[3*j+1]);
-			cijvec.push_back(make_pair(cij_lib[cur_movie_id][id], cij_lib[cur_movie_id][id]*user_list_movies[3*j+1]));
         }
-		sort(cijvec.begin(), cijvec.end());
-		callMergeKernel(128, 128, cij, cijr, user_list_movies.size()/3);		
+        // Calling the merge sort kernal to sort cij, and cijr along with it.
+		callMergeKernel(128, 128, cij, cijr, user_list_movies.size()/3);
         float top = 0, bottom = 0;
         int loops = user_list_movies.size()/3 > k ? k : user_list_movies.size()/3;
-        top = correlationKernelSum(cijr, loops, user_list_movies.size()/3);//cij[cij.size() - 1 - i].second;
-        bottom = correlationKernelSum(cij, loops, user_list_movies.size()/3);//bottom += cij[cij.size() - 1 - i].first;
+        
+        // Calling the summing kernel to get the sums.
+        top = correlationKernelSum(cijr, loops, user_list_movies.size()/3);
+        bottom = correlationKernelSum(cij, loops, user_list_movies.size()/3);
         float r_hat = bottom == 0? 3 : top/bottom;
         e_out += pow((val_ratings[i] - r_hat), 2);
-	
-		float corr_top = 0, corr_bot = 0;
-		        /////////////////////////////////////////////////////
-        for (int j = 0; j < loops; j++)
-        {
-            corr_top += cijvec[cijvec.size() - 1 - j].second;
-            corr_bot += cijvec[cijvec.size() - 1 - j].first;
-        }
-        //######################################################
-        r_hat = corr_bot == 0? 3 : corr_top/corr_bot;
-        corr_e_out += pow((val_ratings[i] - r_hat), 2);
-		cout << "e_out "<<e_out <<", corr e_out: "<<corr_e_out<<endl;
-		cout << "top "<<top <<", corr top: "<<corr_top<<endl;
-		cout << "bottom "<<bottom <<", corr bottom: "<<corr_bot<<endl;
-
 
     }
     e_out = pow(e_out / val_uid.size(), 0.5) ;
@@ -238,12 +194,10 @@ int main()
 {
     Data data;
     
-    //data.read_data("valid.txt", true);
     data.read_data("resource/small_train.txt", true);
     
     string ifile = "resource/small_probe.txt";
     string ofile = "resource/small_knn_probe.txt";
-    
     
     float **cij_lib = new float*[17770];
     for (int i = 0; i < 17770; i++)

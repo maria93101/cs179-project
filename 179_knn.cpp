@@ -226,7 +226,6 @@ int main()
 {
     Data data;
     
-    //data.read_data("valid.txt", true);
     data.read_data("resource/small_train.txt", true);
     
     string ifile = "resource/small_probe.txt";
