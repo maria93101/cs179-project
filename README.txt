@@ -71,10 +71,10 @@ Most of the code is in merge_knn.cpp. The Cuda code for sorting and addition is 
 Instructions on how to run smaller components of the project (In addition to demo script) 
 
 
-To run the matrix multiplication, use “make svd” to compile and run ./svd.
+To run the matrix multiplication, use “make clean svd” to compile and run ./svd.
 
 
-To run knn, use “make knn” to compile and run ./knn
+To run knn, use “make clean knn” to compile and run ./knn
 
 
 Provide code output when run on Titan, especially if it takes a while to run
